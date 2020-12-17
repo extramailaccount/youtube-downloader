@@ -5,6 +5,13 @@
     <title>youtube-downloader</title>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
 </head>
+
+<style>
+.hidden {
+  display: none;
+}
+</style>
+
 <body>
 
 <h1>YouTube Downloader</h1>
@@ -15,10 +22,13 @@
 
 <form>
     <input type="text" value="https://www.youtube.com/watch?v=aqz-KE-bpKQ" size="80" id="txt_url">
-    <input type="button" id="btn_fetch" value="Fetch">
+    <input type="button" id="btn_fetch_formats" value="Fetch formats">
+	<br />
+	<select name="formats" class="hidden" id="formats"><option>aapie</option></select>
+    <input type="button" class="hidden" id="btn_fetch" value="Fetch">
 </form>
 
-<video width="800" height="600" controls>
+<video controls>
     <source src="" type="video/mp4"/>
     <em>Sorry, your browser doesn't support HTML5 video.</em>
 </video>
@@ -26,8 +36,10 @@
 
 <script>
     $(function () {
-
-        $("#btn_fetch").click(function () {
+	
+        $("#btn_fetch_formats").click(function () {
+			$("#formats").hide();
+			$("#btn_fetch").hide();
 
             var url = $("#txt_url").val();
 
@@ -35,7 +47,6 @@
             oThis.attr('disabled', true);
 
             $.get('video_info.php', {url: url}, function (data) {
-
                 console.log(data);
 
                 oThis.attr('disabled', false);
@@ -47,26 +58,39 @@
                     alert('Error: ' + error);
                     return;
                 }
+				
+				links.sort(function(a,b){
+					return a.format > b.format ? 1 : -1;
+				});				
+				var formats = $("#formats");
+				formats.empty();
+				formats.append($.map(links, function(o) {
+					return $('<option/>', {
+					value: o.url,
+					text: o.format
+				  });
+				}));				
 
-                // first link with video
-                var first = links.find(function (link) {
-                    return link['format'].indexOf('video') !== -1;
-                });
-
-                if (typeof first === 'undefined') {
-                    alert('No video found!');
-                    return;
-                }
-
-                var stream_url = 'stream.php?url=' + encodeURIComponent(first['url']);
-
-                var video = $("video");
-                video.attr('src', stream_url);
-                video[0].load();
+				$("#formats").show();
+				$("#btn_fetch").show();				
             });
 
         });
 
+        $("#btn_fetch").click(function () {
+			var url = $('#formats').val();
+			
+			if (typeof url === 'undefined') {
+				alert('No video found!');
+				return;
+			}
+
+			var stream_url = 'stream.php?url=' + encodeURIComponent(url);
+
+			var video = $("video");
+			video.attr('src', stream_url);
+			video[0].load();
+        });		
     });
 </script>
 
